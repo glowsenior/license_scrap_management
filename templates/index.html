@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='output.css') }}"> -->
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Bot Manager</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for bot in bots %}
+            <div class="bg-gray-800 rounded-lg shadow-md p-4">
+                <h2 class="text-lg font-semibold">{{ bot }}</h2>
+                <p>Status:
+                    {% if bot_statuses[bot]['running'] %}
+                        <span class="text-green-500">Running (PID: {{ bot_statuses[bot]['pid'] }})</span>
+                    {% else %}
+                        <span class="text-red-500">Stopped</span>
+                    {% endif %}
+                </p>
+
+                <div class="mt-2">
+                    <form action="/start_bot" method="post" class="inline">
+                        <input type="hidden" name="bot_name" value="{{ bot }}">
+                        <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" {% if bot_statuses[bot]['running'] %}disabled{% endif %}>Start</button>
+                    </form>
+
+                    <form action="/stop_bot" method="post" class="inline">
+                        <input type="hidden" name="bot_name" value="{{ bot }}">
+                        <input type="hidden" name="pid" value="{{ bot_statuses[bot]['pid'] }}">
+                        <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" {% if not bot_statuses[bot]['running'] %}disabled{% endif %}>Stop</button>
+                    </form>
+
+                    <a href="{{ url_for('bot_details', bot_name=bot) }}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Details</a>
+                </div>
+
+                <div class="mt-2">
+                    <form action="/schedule_bot" method="post">
+                        <input type="hidden" name="bot_name" value="{{ bot }}">
+                        <label for="schedule_time" class="block text-sm font-medium text-gray-300">Schedule Time (HH:MM):</label>
+                        <input type="time" name="schedule_time" id="schedule_time" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:text-white">
+                        <button type="submit" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-2">Schedule</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
