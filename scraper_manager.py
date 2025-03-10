@@ -2,6 +2,7 @@ import threading
 import time
 import datetime
 import importlib  # For dynamically importing scraper modules
+import os
 
 # Configuration
 NUM_CONCURRENT_SCRAPERS = 5
@@ -14,8 +15,9 @@ bot_statuses = {}
 
 def initialize_bot_statuses():
     """Initializes the status for all bots."""
-    for i in range(1, NUM_SCRAPERS + 1):
-        bot_name = f"{SCRAPER_MODULE_PREFIX}{i}"
+    folder_names = [folder for folder in os.listdir(SCRAPER_DIR) if os.path.isdir(os.path.join(SCRAPER_DIR, folder))]
+    for i in folder_names:
+        bot_name = f"{i}"
         bot_statuses[bot_name] = {
             "status": "pending",
             "start_time": None,
@@ -36,11 +38,13 @@ def run_scraper_bot(bot_name):
         update_bot_status(bot_name, status="running", start_time=datetime.datetime.now())
 
         # Dynamically import and run the scraper function
-        module_name = f"{SCRAPER_DIR}.{bot_name}"
+        module_name = f"{SCRAPER_DIR}.{bot_name}.main"
         module = importlib.import_module(module_name, package=".") # package="." for relative import
-        scraper_function = module.run_scraper
+        MyClass = getattr(module, 'LicenseCrawler')
+        instance = MyClass()
+        scraper_function = instance.run
 
-        result = scraper_function(bot_name) # Execute the scraper logic
+        result = scraper_function() # Execute the scraper logic
 
         update_bot_status(
             bot_name,
@@ -65,8 +69,8 @@ def manage_scraper_cycle():
     """Manages the execution of all scrapers in batches."""
     print("Starting scraper cycle...")
     initialize_bot_statuses() # Reset statuses for a new cycle
-
-    scraper_names = [f"{SCRAPER_MODULE_PREFIX}{i}" for i in range(1, NUM_SCRAPERS + 1)]
+    folder_names = [folder for folder in os.listdir(SCRAPER_DIR) if os.path.isdir(os.path.join(SCRAPER_DIR, folder))]
+    scraper_names = [f"{i}" for i in folder_names]
     semaphore = threading.Semaphore(NUM_CONCURRENT_SCRAPERS)
     threads = []
 
